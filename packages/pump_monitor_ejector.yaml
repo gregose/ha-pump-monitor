@@ -95,13 +95,13 @@ template:
         device_class: duration
         unit_of_measurement: "s"
         state_class: measurement
+        # prev stop comes DIRECTLY from ejector_last_stop_time (set on the prior
+        # on→off, so it already holds the stop preceding THIS start). Do NOT stash
+        # it in a self-attribute — that lags one firing and ~doubles the gap.
         state: >
-          {% set prev_stop = this.attributes.get('last_stop') %}
+          {% set prev_stop = states('sensor.ejector_last_stop_time') %}
           {{ (as_timestamp(trigger.to_state.last_changed) - as_timestamp(prev_stop)) | round(0)
-             if prev_stop else 0 }}
-        attributes:
-          # the stop that preceded THIS start (read at trigger time)
-          last_stop: "{{ states('sensor.ejector_last_stop_time') }}"
+             if prev_stop not in ['unknown', 'unavailable', 'None', ''] else 0 }}
 
   # --- trigger: per-run peak current (start edge + every CT sample) ------------
   - trigger:
