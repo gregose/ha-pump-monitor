@@ -144,3 +144,8 @@ are documented, never required.
 - Current monitoring is **load-trend detection, not transient protection**: the
   ~1 Hz damped CT data catches slow load trends and steady-state signatures, not
   millisecond inrush / locked-rotor spikes.
+
+## License
+
+[MIT](LICENSE). The entity IDs, device addresses, and `notify.gregs_iphone`
+target are this deployment's specifics — fork and replace them with your own.
