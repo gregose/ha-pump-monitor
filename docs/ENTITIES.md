@@ -174,3 +174,24 @@ Notes:
   `history_ready` stays OFF (warm-up fallback) — moot in practice since the
   ejector no-run watchdog is OFF by design (§6a). Re-run the script after more
   history accrues to seed it properly.
+
+### Observed live storm behavior (sump)
+
+Recorded during an active storm on first deployment (monitoring silenced, data
+still collecting). Useful reference for tuning `short_interval` once storm data
+lands in the rolling 14-day window:
+
+| Metric | Value |
+|---|---|
+| Typical storm interval | ~60 s |
+| Storm-peak interval (fastest observed) | **~58 s** |
+| Run duration during storm | still ~8–9 s (unchanged from baseline) |
+| Duty cycle at storm peak | ~13 % (≪ 50 % high-duty threshold) |
+
+Reads at storm cadence: `short_cycling` fires (≈9–10 starts/10 min ≫ 4);
+`short_interval` does **not** yet (58 s > the 30 s fixed floor, and p05 not warm).
+As storms enter the 14-day window the live `interval_p05_14d` will settle near
+this ~58–80 s band — at which point `short_interval` begins flagging storm peaks
+(its intended "approaching capacity" heads-up). Run duration holding ~8 s with a
+positive idle gap confirms the pump keeps up even at peak — the worry signs would
+be duration climbing or idle gap shrinking toward 0.
