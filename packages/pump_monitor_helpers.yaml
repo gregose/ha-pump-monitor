@@ -1,0 +1,396 @@
+# =============================================================================
+# pump_monitor_helpers.yaml
+# Tunable thresholds (input_number) and enable toggles (input_boolean) for BOTH
+# pumps. Plan §7. These drive every Layer 3 binary sensor and Layer 4 alert so
+# the user can tune live (Developer Tools / dashboard Controls card) without
+# editing YAML.
+#
+# Per §6a the ejector defaults differ ONLY for: no-run watchdog (OFF) and
+# short-interval (OFF). Per §6b ALL flood/safety toggles are ON for both pumps.
+#
+# TASK A: input_number defaults below marked "# TASK A" are warm-up fallbacks.
+# Replace with measured values from docs/analysis/seed_thresholds.py output,
+# then flip *_no_run_history_ready to ON (on) so the no-run watchdog switches
+# from the 90-min warm-up fixed bound to the adaptive 3x-median logic.
+# =============================================================================
+
+input_number:
+  # ---- Sump thresholds -------------------------------------------------------
+  sump_max_run_seconds:
+    name: "Sump max run seconds"
+    icon: mdi:timer-alert
+    min: 10
+    max: 1800
+    step: 5
+    unit_of_measurement: "s"
+    mode: box
+    initial: 120                # continuous-run hard cap
+  sump_short_interval_seconds:
+    name: "Sump short interval seconds"
+    icon: mdi:timer-sand
+    min: 5
+    max: 600
+    step: 1
+    unit_of_measurement: "s"
+    mode: box
+    initial: 30                 # TASK A: min healthy start-to-start gap (overwhelm)
+  sump_short_cycle_window_min:
+    name: "Sump short-cycle window"
+    icon: mdi:clock-outline
+    min: 1
+    max: 60
+    step: 1
+    unit_of_measurement: "min"
+    mode: box
+    initial: 10
+  sump_short_cycle_max_starts:
+    name: "Sump short-cycle max starts"
+    icon: mdi:counter
+    min: 1
+    max: 50
+    step: 1
+    unit_of_measurement: "starts"
+    mode: box
+    initial: 4
+  sump_duration_zscore_mult:
+    name: "Sump duration z-score mult"
+    icon: mdi:sigma
+    min: 1
+    max: 6
+    step: 0.5
+    unit_of_measurement: "σ"
+    mode: box
+    initial: 3
+  sump_current_drift_pct:
+    name: "Sump current high-load drift %"
+    icon: mdi:trending-up
+    min: 5
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+    initial: 20
+  sump_current_low_pct:
+    name: "Sump current low-load %"
+    icon: mdi:trending-down
+    min: 10
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+    initial: 60
+  sump_current_spike_a:
+    name: "Sump current spike cutoff"
+    icon: mdi:flash-alert
+    min: 0
+    max: 60
+    step: 0.1
+    unit_of_measurement: "A"
+    mode: box
+    initial: 0                  # USER: set after observing a few normal runs (§7)
+  sump_high_duty_cycle_pct:
+    name: "Sump high duty-cycle %"
+    icon: mdi:percent
+    min: 5
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+    initial: 50
+  sump_no_run_multiplier:
+    name: "Sump no-run multiplier"
+    icon: mdi:multiplication
+    min: 1
+    max: 10
+    step: 0.5
+    unit_of_measurement: "×"
+    mode: box
+    initial: 3
+  sump_no_run_warmup_fixed_min:
+    name: "Sump no-run warm-up fixed"
+    icon: mdi:timer-cog
+    min: 5
+    max: 1440
+    step: 5
+    unit_of_measurement: "min"
+    mode: box
+    initial: 90                 # fixed fallback before history learned
+  sump_no_run_floor_min:
+    name: "Sump no-run floor"
+    icon: mdi:arrow-collapse-down
+    min: 5
+    max: 1440
+    step: 5
+    unit_of_measurement: "min"
+    mode: box
+    initial: 15                 # Task A seeded: sump median cadence ~6.7 min → floor 15
+  sump_no_run_ceiling_min:
+    name: "Sump no-run ceiling"
+    icon: mdi:arrow-collapse-up
+    min: 5
+    max: 2880
+    step: 5
+    unit_of_measurement: "min"
+    mode: box
+    initial: 30                # Task A seeded: sump p99 interval ~12.7 min → ceiling 30
+
+  # ---- Ejector thresholds ----------------------------------------------------
+  ejector_max_run_seconds:
+    name: "Ejector max run seconds"
+    icon: mdi:timer-alert
+    min: 10
+    max: 1800
+    step: 5
+    unit_of_measurement: "s"
+    mode: box
+    initial: 120
+  ejector_short_interval_seconds:
+    name: "Ejector short interval seconds"
+    icon: mdi:timer-sand
+    min: 5
+    max: 600
+    step: 1
+    unit_of_measurement: "s"
+    mode: box
+    initial: 30                 # alert OFF by default for ejector (§6a)
+  ejector_short_cycle_window_min:
+    name: "Ejector short-cycle window"
+    icon: mdi:clock-outline
+    min: 1
+    max: 60
+    step: 1
+    unit_of_measurement: "min"
+    mode: box
+    initial: 10
+  ejector_short_cycle_max_starts:
+    name: "Ejector short-cycle max starts"
+    icon: mdi:counter
+    min: 1
+    max: 50
+    step: 1
+    unit_of_measurement: "starts"
+    mode: box
+    initial: 4
+  ejector_duration_zscore_mult:
+    name: "Ejector duration z-score mult"
+    icon: mdi:sigma
+    min: 1
+    max: 6
+    step: 0.5
+    unit_of_measurement: "σ"
+    mode: box
+    initial: 3
+  ejector_current_drift_pct:
+    name: "Ejector current high-load drift %"
+    icon: mdi:trending-up
+    min: 5
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+    initial: 20
+  ejector_current_low_pct:
+    name: "Ejector current low-load %"
+    icon: mdi:trending-down
+    min: 10
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+    initial: 60
+  ejector_current_spike_a:
+    name: "Ejector current spike cutoff"
+    icon: mdi:flash-alert
+    min: 0
+    max: 60
+    step: 0.1
+    unit_of_measurement: "A"
+    mode: box
+    initial: 0                  # USER: set after observing a few normal runs (§7)
+  ejector_high_duty_cycle_pct:
+    name: "Ejector high duty-cycle %"
+    icon: mdi:percent
+    min: 5
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+    initial: 50
+  ejector_no_run_multiplier:
+    name: "Ejector no-run multiplier"
+    icon: mdi:multiplication
+    min: 1
+    max: 10
+    step: 0.5
+    unit_of_measurement: "×"
+    mode: box
+    initial: 3
+  ejector_no_run_warmup_fixed_min:
+    name: "Ejector no-run warm-up fixed"
+    icon: mdi:timer-cog
+    min: 5
+    max: 1440
+    step: 5
+    unit_of_measurement: "min"
+    mode: box
+    initial: 90
+  ejector_no_run_floor_min:
+    name: "Ejector no-run floor"
+    icon: mdi:arrow-collapse-down
+    min: 5
+    max: 1440
+    step: 5
+    unit_of_measurement: "min"
+    mode: box
+    initial: 120                # Task A (provisional): only 16 ejector cycles seen
+  ejector_no_run_ceiling_min:
+    name: "Ejector no-run ceiling"
+    icon: mdi:arrow-collapse-up
+    min: 5
+    max: 2880
+    step: 5
+    unit_of_measurement: "min"
+    mode: box
+    initial: 1200               # Task A (provisional): sparse history; no-run OFF for ejector anyway
+
+  # ---- Shared ----------------------------------------------------------------
+  flood_sensor_low_battery_pct:
+    name: "Flood sensor low-battery %"
+    icon: mdi:battery-alert
+    min: 1
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+    initial: 20
+
+# NOTE on `initial:` — input_boolean restores its last state across restarts.
+# `initial` only seeds the FIRST boot (before any stored state exists); after
+# that the user's live toggle wins. That is the intended behavior here: ship a
+# sane default, let the user tune live.
+input_boolean:
+  # ---- History-ready gates (flipped by Task A seeding) -----------------------
+  sump_no_run_history_ready:
+    name: "Sump no-run history ready"
+    icon: mdi:history
+    initial: true              # Task A DONE: seeded from 1166 sump cycles → adaptive on
+  ejector_no_run_history_ready:
+    name: "Ejector no-run history ready"
+    icon: mdi:history
+    initial: false             # only 16 ejector cycles seen — stay on warm-up; no-run OFF anyway
+
+  # ---- Sump enable toggles ---------------------------------------------------
+  sump_monitoring_enabled:
+    name: "Sump monitoring enabled"
+    icon: mdi:monitor-eye
+    initial: true
+  sump_alert_continuous_run_enabled:
+    name: "Sump alert: continuous run"
+    icon: mdi:bell
+    initial: true
+  sump_alert_short_interval_enabled:
+    name: "Sump alert: short interval"
+    icon: mdi:bell
+    initial: true              # ON for sump (§6a)
+  sump_alert_short_cycle_enabled:
+    name: "Sump alert: short cycling"
+    icon: mdi:bell
+    initial: true
+  sump_alert_duration_anomaly_enabled:
+    name: "Sump alert: duration anomaly"
+    icon: mdi:bell
+    initial: true
+  sump_alert_current_load_enabled:
+    name: "Sump alert: current load"
+    icon: mdi:bell
+    initial: true
+  sump_alert_duty_cycle_enabled:
+    name: "Sump alert: duty cycle"
+    icon: mdi:bell
+    initial: true
+  sump_alert_sensor_unavailable_enabled:
+    name: "Sump alert: sensor unavailable"
+    icon: mdi:bell
+    initial: true
+  sump_alert_no_run_enabled:
+    name: "Sump alert: no run"
+    icon: mdi:bell
+    initial: true              # ON for sump (§6a)
+  sump_alert_high_freq_enabled:
+    name: "Sump alert: high frequency"
+    icon: mdi:bell-off
+    initial: false             # OFF; superseded by short_interval (§6a)
+  sump_alert_flood_enabled:
+    name: "Sump alert: flooding"
+    icon: mdi:bell-ring
+    initial: true
+  sump_alert_running_but_flooding_enabled:
+    name: "Sump alert: running but flooding"
+    icon: mdi:bell-ring
+    initial: true
+  sump_alert_protection_compromised_enabled:
+    name: "Sump alert: protection compromised"
+    icon: mdi:bell-ring
+    initial: true
+  sump_alert_flood_sensor_fault_enabled:
+    name: "Sump alert: flood sensor fault"
+    icon: mdi:bell-ring
+    initial: true
+
+  # ---- Ejector enable toggles ------------------------------------------------
+  ejector_monitoring_enabled:
+    name: "Ejector monitoring enabled"
+    icon: mdi:monitor-eye
+    initial: true
+  ejector_alert_continuous_run_enabled:
+    name: "Ejector alert: continuous run"
+    icon: mdi:bell
+    initial: true
+  ejector_alert_short_interval_enabled:
+    name: "Ejector alert: short interval"
+    icon: mdi:bell-off
+    initial: false             # OFF for ejector (§6a)
+  ejector_alert_short_cycle_enabled:
+    name: "Ejector alert: short cycling"
+    icon: mdi:bell
+    initial: true
+  ejector_alert_duration_anomaly_enabled:
+    name: "Ejector alert: duration anomaly"
+    icon: mdi:bell
+    initial: true
+  ejector_alert_current_load_enabled:
+    name: "Ejector alert: current load"
+    icon: mdi:bell
+    initial: true
+  ejector_alert_duty_cycle_enabled:
+    name: "Ejector alert: duty cycle"
+    icon: mdi:bell
+    initial: true
+  ejector_alert_sensor_unavailable_enabled:
+    name: "Ejector alert: sensor unavailable"
+    icon: mdi:bell
+    initial: true
+  ejector_alert_no_run_enabled:
+    name: "Ejector alert: no run"
+    icon: mdi:bell-off
+    initial: false             # OFF for ejector (§6a)
+  ejector_alert_high_freq_enabled:
+    name: "Ejector alert: high frequency"
+    icon: mdi:bell-off
+    initial: false             # OFF
+  ejector_alert_flood_enabled:
+    name: "Ejector alert: flooding"
+    icon: mdi:bell-ring
+    initial: true
+  ejector_alert_running_but_flooding_enabled:
+    name: "Ejector alert: running but flooding"
+    icon: mdi:bell-ring
+    initial: true
+  ejector_alert_protection_compromised_enabled:
+    name: "Ejector alert: protection compromised"
+    icon: mdi:bell-ring
+    initial: true
+  ejector_alert_flood_sensor_fault_enabled:
+    name: "Ejector alert: flood sensor fault"
+    icon: mdi:bell-ring
+    initial: true
