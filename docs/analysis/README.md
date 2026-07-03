@@ -37,6 +37,33 @@ spread, median idle gap) and a paste-ready block of `input_number` initials.
 
 Commit the CSV + the resulting helper values so the seeding is reproducible.
 
+## Rain correlation (preview of the Phase 2 weather seam)
+
+`rain_correlation.py` correlates the sump's cycling with public hourly rainfall
+(Open-Meteo, no API key) — a stand-in weather station until the GW3001 + WH40BH
+arrive. It reuses the same CSV, pulls precip for the export's date range, and
+reports:
+
+- **rain → cycling correlation** with the best lag (rain leads cycling by the
+  soil-percolation time);
+- a **dry-weather vs storm cadence split** — the dry median is the *true*
+  baseline for the no-run watchdog (the Task A seed is storm-blended and runs a
+  bit fast);
+- a **rain dose-response** (starts/hr by hourly intensity);
+- **fast-cycling-without-rain** episodes over a conservative ~12h drainage window
+  (the leak / check-valve / intrusion signature — groundwater recedes for hours
+  after rain, so a short window mislabels storm tails as leaks).
+
+```bash
+python3 rain_correlation.py sump_history.csv           # set --lat/--lon to your location
+python3 rain_correlation.py sump_history.csv --lat 41.88 --lon -87.63 --tz America/Chicago
+```
+
+Needs `api.open-meteo.com` reachable (in the sandbox: `sbx policy allow network
+api.open-meteo.com,archive-api.open-meteo.com`). A ~30-day export spanning
+several storms and multi-day dry spells makes the dry baseline and any true leak
+signature far clearer than a short window can.
+
 > The CSV contains only pump on/off timestamps — no secrets — so it is safe to
 > commit. Do **not** commit anything from `/config/secrets.yaml`, `.storage/`,
 > or the recorder DB.
