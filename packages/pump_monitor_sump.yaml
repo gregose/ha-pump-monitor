@@ -113,6 +113,9 @@ template:
         entity_id: sensor.energy_meter_eth_ws_f3a598_ct2_amps   # sump = CT2
         id: sample
     sensor:
+      # Post-startup peak: ignores the first startup_ignore_s so the peak (and the
+      # current_spike alert it feeds) reflects a SUSTAINED jam, not the inrush.
+      # The inrush is captured separately by Sump Startup Current (observational).
       - name: "Sump Run Peak Current"
         unique_id: pm_sump_run_peak_current
         device_class: current
@@ -120,9 +123,34 @@ template:
         state_class: measurement
         state: >
           {% set cur = states('sensor.energy_meter_eth_ws_f3a598_ct2_amps') | float(0) %}
+          {% set win = states('input_number.sump_startup_ignore_s') | float(2) %}
+          {% set st = states('sensor.sump_last_start_time') %}
+          {% set el = ((now()|as_timestamp) - (st|as_timestamp(0))) if st not in ['unknown','unavailable','None',''] else 999 %}
+          {% if trigger.id == 'start' %}
+            0
+          {% elif is_state('binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running','on') and el >= win %}
+            {{ [ this.state | float(0), cur ] | max }}
+          {% else %}
+            {{ this.state | float(0) }}
+          {% endif %}
+
+      # Startup current — peak seen DURING the first startup_ignore_s of a run:
+      # the inrush glimpse the ~1 Hz CT can catch. One value/run, NOISE-PRONE
+      # (sub-second surge vs 1 Hz sampling), so it is OBSERVATIONAL ONLY — no
+      # alert reads it. Trend it via Sump Startup Current Median 30.
+      - name: "Sump Startup Current"
+        unique_id: pm_sump_startup_current
+        device_class: current
+        unit_of_measurement: "A"
+        state_class: measurement
+        state: >
+          {% set cur = states('sensor.energy_meter_eth_ws_f3a598_ct2_amps') | float(0) %}
+          {% set win = states('input_number.sump_startup_ignore_s') | float(2) %}
+          {% set st = states('sensor.sump_last_start_time') %}
+          {% set el = ((now()|as_timestamp) - (st|as_timestamp(0))) if st not in ['unknown','unavailable','None',''] else 999 %}
           {% if trigger.id == 'start' %}
             {{ cur }}
-          {% elif is_state('binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running','on') %}
+          {% elif is_state('binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running','on') and el < win %}
             {{ [ this.state | float(0), cur ] | max }}
           {% else %}
             {{ this.state | float(0) }}
@@ -162,13 +190,21 @@ template:
           {% endif %}
         attributes:
           # `this` reflects pre-update attributes, so accumulation is correct.
+          # samples in the first startup_ignore_s (inrush) are skipped → the mean
+          # is steady-state, immune to run frequency (inrush no longer pulls it up)
           n: >
+            {% set win = states('input_number.sump_startup_ignore_s') | float(2) %}
+            {% set st = states('sensor.sump_last_start_time') %}
+            {% set el = ((now()|as_timestamp) - (st|as_timestamp(0))) if st not in ['unknown','unavailable','None',''] else 999 %}
             {% if trigger.id == 'start' %}0
-            {% elif trigger.id == 'sample' and is_state('binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running','on') %}{{ (this.attributes.get('n', 0) | int) + 1 }}
+            {% elif trigger.id == 'sample' and is_state('binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running','on') and el >= win %}{{ (this.attributes.get('n', 0) | int) + 1 }}
             {% else %}{{ this.attributes.get('n', 0) | int }}{% endif %}
           sum: >
+            {% set win = states('input_number.sump_startup_ignore_s') | float(2) %}
+            {% set st = states('sensor.sump_last_start_time') %}
+            {% set el = ((now()|as_timestamp) - (st|as_timestamp(0))) if st not in ['unknown','unavailable','None',''] else 999 %}
             {% if trigger.id == 'start' %}0
-            {% elif trigger.id == 'sample' and is_state('binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running','on') %}{{ (this.attributes.get('sum', 0) | float) + (states('sensor.energy_meter_eth_ws_f3a598_ct2_amps') | float(0)) }}
+            {% elif trigger.id == 'sample' and is_state('binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running','on') and el >= win %}{{ (this.attributes.get('sum', 0) | float) + (states('sensor.energy_meter_eth_ws_f3a598_ct2_amps') | float(0)) }}
             {% else %}{{ this.attributes.get('sum', 0) | float }}{% endif %}
 
   # --- trigger: lifetime runtime odometer (cumulative; total_increasing) -------
@@ -645,6 +681,32 @@ sensor:
     entity_id: sensor.sump_run_avg_current
     state_characteristic: standard_deviation
     sampling_size: 8000
+    max_age: { days: 30 }
+  # smoothed startup-current trend (observational): 30-run rolling median rides
+  # over the per-run inrush noise. A slow rise MIGHT hint at a weakening start
+  # capacitor / stiffening bearings — not alerted, just recorded to watch.
+  - platform: statistics
+    name: "Sump Startup Current Median 30"
+    unique_id: pm_sump_startup_current_median_30
+    entity_id: sensor.sump_startup_current
+    state_characteristic: median
+    sampling_size: 30
+    max_age: { days: 60 }
+  # longer-window duty cycle = mean of the rolling 24h duty (uses stats storage,
+  # so it survives the ~10d recorder purge that would break a 30d history_stats).
+  - platform: statistics
+    name: "Sump Duty Cycle 7d"
+    unique_id: pm_sump_duty_cycle_7d
+    entity_id: sensor.sump_duty_cycle_24h
+    state_characteristic: mean
+    sampling_size: 5000
+    max_age: { days: 7 }
+  - platform: statistics
+    name: "Sump Duty Cycle 30d"
+    unique_id: pm_sump_duty_cycle_30d
+    entity_id: sensor.sump_duty_cycle_24h
+    state_characteristic: mean
+    sampling_size: 15000
     max_age: { days: 30 }
 
 # -----------------------------------------------------------------------------

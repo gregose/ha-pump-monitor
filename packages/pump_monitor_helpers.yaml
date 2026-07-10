@@ -88,6 +88,16 @@ input_number:
     unit_of_measurement: "A"
     mode: box
     initial: 0                  # USER: set after observing a few normal runs (§7)
+  sump_startup_ignore_s:
+    name: "Sump startup-ignore window"
+    icon: mdi:motion-play-outline
+    min: 0
+    max: 10
+    step: 0.5
+    unit_of_measurement: "s"
+    mode: box
+    initial: 2                  # first N s of a run are inrush; excluded from the
+                                # steady-state avg/peak, captured as startup_current
   sump_high_duty_cycle_pct:
     name: "Sump high duty-cycle %"
     icon: mdi:percent
@@ -218,6 +228,16 @@ input_number:
     unit_of_measurement: "A"
     mode: box
     initial: 0                  # USER: set after observing a few normal runs (§7)
+  ejector_startup_ignore_s:
+    name: "Ejector startup-ignore window"
+    icon: mdi:motion-play-outline
+    min: 0
+    max: 10
+    step: 0.5
+    unit_of_measurement: "s"
+    mode: box
+    initial: 2                  # first N s of a run are inrush; excluded from the
+                                # steady-state avg/peak, captured as startup_current
   ejector_high_duty_cycle_pct:
     name: "Ejector high duty-cycle %"
     icon: mdi:percent

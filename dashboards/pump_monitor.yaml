@@ -186,10 +186,6 @@ views:
                     name: Last interval
                   - entity: sensor.sump_interval_median_14d
                     name: Typical
-                  - entity: sensor.sump_runs_24h
-                    name: Runs 24h
-                  - entity: sensor.sump_duty_cycle_24h
-                    name: Duty 24h
                   - entity: binary_sensor.0x282c02bfffefb418_water_leak
                     name: Flood
 
@@ -335,6 +331,34 @@ views:
                     group_by:
                       func: last
                       duration: 1h
+              # Startup current (OBSERVATIONAL — not tied to any alert): the
+              # per-run inrush glimpse (teal columns) with a 30-run rolling
+              # median (purple) to ride over the sampling noise. Kept to watch
+              # for a slow rise (weak start capacitor / stiff bearings) later.
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: Startup current (observational)
+                  show_states: true
+                graph_span: 7d
+                yaxis:
+                  - min: 0
+                    apex_config:
+                      title:
+                        text: A
+                series:
+                  - entity: sensor.sump_startup_current
+                    name: Per run
+                    type: column
+                    color: '#26a69a'
+                    group_by:
+                      func: raw
+                  - entity: sensor.sump_startup_current_median_30
+                    name: Median (30 runs)
+                    type: line
+                    stroke_width: 3
+                    color: '#ab47bc'
+                    curve: smooth
 
           # ---- safety + lifetime, two-up (bottom) ----
           - type: horizontal-stack
@@ -359,8 +383,14 @@ views:
                     name: Lifetime cycles
                   - entity: sensor.sump_lifetime_runtime
                     name: Lifetime runtime
+                  - entity: sensor.sump_runs_24h
+                    name: Runs (24h)
                   - entity: sensor.sump_duty_cycle_24h
-                    name: Duty cycle 24h
+                    name: Duty (24h)
+                  - entity: sensor.sump_duty_cycle_7d
+                    name: Duty (7d)
+                  - entity: sensor.sump_duty_cycle_30d
+                    name: Duty (30d)
 
   # ===========================================================================
   # EJECTOR — existing detail (controls moved to Config). Pending redesign
@@ -507,6 +537,7 @@ views:
               - input_number.sump_current_drift_pct
               - input_number.sump_current_low_pct
               - input_number.sump_current_spike_a
+              - input_number.sump_startup_ignore_s
               - input_number.sump_high_duty_cycle_pct
               - input_number.sump_high_frequency_max
               - input_number.sump_no_run_multiplier
@@ -545,6 +576,7 @@ views:
               - input_number.ejector_current_drift_pct
               - input_number.ejector_current_low_pct
               - input_number.ejector_current_spike_a
+              - input_number.ejector_startup_ignore_s
               - input_number.ejector_high_duty_cycle_pct
               - input_number.ejector_high_frequency_max
               - input_number.ejector_no_run_multiplier
