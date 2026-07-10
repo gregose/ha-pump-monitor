@@ -177,11 +177,6 @@ views:
                 entities:
                   - entity: binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running
                     name: Running
-                  # timestamp entity → the frontend renders a self-updating
-                  # "N min ago" that re-ticks on its own, decoupled from the
-                  # time_since_last_run template (which only re-evals ~1/min).
-                  - entity: sensor.sump_last_start_time
-                    name: Since run
                   - entity: sensor.sump_interval_between_starts
                     name: Last interval
                   - entity: sensor.sump_interval_median_14d
@@ -192,6 +187,20 @@ views:
                     name: Duty 24h
                   - entity: binary_sensor.0x282c02bfffefb418_water_leak
                     name: Flood
+
+          # ---- live count-up since the last run ----
+          # Ticks every second client-side (the timestamp sensor itself only
+          # updates on the next run). Bar fills toward 15 min (= no_run_floor_min)
+          # so a near-full bar reads as "overdue". Requires timer-bar-card (HACS).
+          - type: custom:timer-bar-card
+            name: Time since last run
+            entity: sensor.sump_last_start_time
+            start_time:
+              state: true
+            duration:
+              fixed: "0:15:00"
+            invert: true
+            bar_height: 12px
 
           # ---- active problems (hidden entirely when all clear) ----
           - type: custom:auto-entities
