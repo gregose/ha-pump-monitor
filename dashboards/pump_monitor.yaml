@@ -140,6 +140,14 @@ views:
     panel: true
     cards:
       - type: vertical-stack
+        # Margin around the full-bleed panel. Requires the card-mod HACS card;
+        # if card-mod isn't installed this key is simply ignored (no error).
+        card_mod:
+          style: |
+            :host {
+              display: block;
+              margin: 12px 16px 24px 16px;
+            }
         cards:
           # ---- status line ----
           - type: markdown
@@ -169,7 +177,10 @@ views:
                 entities:
                   - entity: binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running
                     name: Running
-                  - entity: sensor.sump_time_since_last_run
+                  # timestamp entity → the frontend renders a self-updating
+                  # "N min ago" that re-ticks on its own, decoupled from the
+                  # time_since_last_run template (which only re-evals ~1/min).
+                  - entity: sensor.sump_last_start_time
                     name: Since run
                   - entity: sensor.sump_interval_between_starts
                     name: Last interval
@@ -280,13 +291,14 @@ views:
                   - entity: sensor.sump_last_run_duration
                     name: Run duration
                     type: column
+                    color: '#42a5f5'          # blue columns
                     group_by:
                       func: raw
                   - entity: sensor.sump_duration_mean
                     name: Mean 14d
                     type: line
-                    stroke_width: 2
-                    color: '#fb8c00'
+                    stroke_width: 3
+                    color: '#ff9800'          # orange line — clearly distinct
                     curve: smooth
 
           - type: horizontal-stack
