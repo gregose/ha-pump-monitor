@@ -231,19 +231,26 @@ views:
                 stroke_width: 2
                 curve: smooth
                 group_by:
-                  func: raw
+                  func: median
+                  duration: 15min
               - entity: sensor.sump_interval_median_14d
                 name: Median 14d
                 type: line
                 stroke_width: 1
                 curve: stepline
                 color: '#43a047'
+                group_by:
+                  func: last
+                  duration: 1h
               - entity: sensor.sump_interval_p05_14d
                 name: P05 floor
                 type: line
                 stroke_width: 1
                 curve: stepline
                 color: '#e53935'
+                group_by:
+                  func: last
+                  duration: 1h
 
           # ---- graphs, two-up ----
           - type: horizontal-stack
@@ -256,7 +263,7 @@ views:
               - type: custom:apexcharts-card
                 header:
                   show: true
-                  title: Run current (avg per run)
+                  title: Run current (hourly avg)
                   show_states: true
                 graph_span: 7d
                 yaxis:
@@ -265,22 +272,28 @@ views:
                       title:
                         text: A
                 series:
+                  # bucket per-run values to hourly so 7d renders ~168 bars, not
+                  # ~1700 (which crashes Chrome). Shorten graph_span for per-run detail.
                   - entity: sensor.sump_run_avg_current
                     name: Run avg
                     type: column
                     color: '#42a5f5'          # blue columns
                     group_by:
-                      func: raw
+                      func: mean
+                      duration: 1h
                   - entity: sensor.sump_current_baseline_30d
                     name: Baseline 30d
                     type: line
                     stroke_width: 3
                     color: '#ff9800'          # orange mean line
                     curve: smooth
+                    group_by:
+                      func: last
+                      duration: 1h
               - type: custom:apexcharts-card
                 header:
                   show: true
-                  title: Run duration
+                  title: Run duration (hourly max)
                   show_states: true
                 graph_span: 7d
                 yaxis:
@@ -294,13 +307,17 @@ views:
                     type: column
                     color: '#42a5f5'          # blue columns
                     group_by:
-                      func: raw
+                      func: max
+                      duration: 1h
                   - entity: sensor.sump_duration_mean
                     name: Mean 14d
                     type: line
                     stroke_width: 3
                     color: '#ff9800'          # orange line — clearly distinct
                     curve: smooth
+                    group_by:
+                      func: last
+                      duration: 1h
 
           - type: horizontal-stack
             cards:
@@ -348,17 +365,21 @@ views:
                         text: A
                 series:
                   - entity: sensor.sump_startup_current
-                    name: Per run
+                    name: Hourly max
                     type: column
                     color: '#26a69a'
                     group_by:
-                      func: raw
+                      func: max
+                      duration: 1h
                   - entity: sensor.sump_startup_current_median_30
                     name: Median (30 runs)
                     type: line
                     stroke_width: 3
                     color: '#ab47bc'
                     curve: smooth
+                    group_by:
+                      func: last
+                      duration: 1h
 
           # ---- safety + lifetime, two-up (bottom) ----
           - type: horizontal-stack
