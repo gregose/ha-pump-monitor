@@ -13,3 +13,11 @@ __pycache__/
 # Local history exports for Task A are kept OUT of version control — their seed
 # results are already baked into the helper defaults and recorded in ENTITIES.md.
 docs/analysis/*.csv
+
+# Screenshots / images: this repo is text-only. Keep dashboard screenshots
+# (which can leak entity IDs, network hints, or other local detail) out of git.
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
