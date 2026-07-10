@@ -252,30 +252,35 @@ views:
           # ---- graphs, two-up ----
           - type: horizontal-stack
             cards:
-              # Live current — SHORT 3h window on purpose: the CT amps sensor is
-              # high-frequency (~1 Hz) and ApexCharts fetches RAW history, so a
-              # 24h span would pull ~86k points and freeze the browser.
+              # Run current — per-run AVERAGE current vs its 30d baseline (the
+              # baseline IS the 30d mean of run_avg_current). Mirrors the run-
+              # duration chart: a run above the line = high load (wear / clog),
+              # below = airlock / sheared impeller. Live instantaneous amps is on
+              # the gauge above.
               - type: custom:apexcharts-card
                 header:
                   show: true
-                  title: Live current (3h)
+                  title: Run current (avg per run)
                   show_states: true
-                graph_span: 3h
-                span:
-                  end: minute
+                graph_span: 7d
                 yaxis:
                   - min: 0
                     apex_config:
                       title:
                         text: A
                 series:
-                  - entity: sensor.energy_meter_eth_ws_f3a598_ct2_amps
-                    name: Current
-                    type: area
-                    stroke_width: 2
+                  - entity: sensor.sump_run_avg_current
+                    name: Run avg
+                    type: column
+                    color: '#42a5f5'          # blue columns
                     group_by:
-                      func: max
-                      duration: 30s
+                      func: raw
+                  - entity: sensor.sump_current_baseline_30d
+                    name: Baseline 30d
+                    type: line
+                    stroke_width: 3
+                    color: '#ff9800'          # orange mean line
+                    curve: smooth
               - type: custom:apexcharts-card
                 header:
                   show: true
@@ -330,27 +335,6 @@ views:
                     group_by:
                       func: last
                       duration: 1h
-              # Storm signature — idle gap (inflow proxy). inflow_index is just
-              # 3600/idle_gap so it's omitted.
-              - type: custom:apexcharts-card
-                header:
-                  show: true
-                  title: Idle gap (inflow proxy)
-                  show_states: true
-                graph_span: 7d
-                yaxis:
-                  - min: 0
-                    apex_config:
-                      title:
-                        text: seconds
-                series:
-                  - entity: sensor.sump_idle_gap
-                    name: Idle gap
-                    type: area
-                    stroke_width: 2
-                    curve: smooth
-                    group_by:
-                      func: raw
 
           # ---- safety + lifetime, two-up (bottom) ----
           - type: horizontal-stack
