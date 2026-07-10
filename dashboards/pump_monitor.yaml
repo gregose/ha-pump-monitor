@@ -279,7 +279,7 @@ views:
                     type: column
                     color: '#42a5f5'          # blue columns
                     group_by:
-                      func: mean
+                      func: avg
                       duration: 1h
                   - entity: sensor.sump_current_baseline_30d
                     name: Baseline 30d
