@@ -367,8 +367,10 @@ template:
         device_class: problem
         # built but alert OFF (superseded by short_interval; revisit Phase 2).
         # ROADMAP: replace fixed ceiling with a rain-normalized daily view.
+        # Threshold is the live ejector_high_frequency_max helper (default 60).
         state: >
-          {{ states('sensor.ejector_runs_24h') | float(0) > 60 }}
+          {{ states('sensor.ejector_runs_24h') | float(0)
+             > states('input_number.ejector_high_frequency_max') | float(60) }}
 
       # --- §6b water-safety layer ---------------------------------------------
       - name: "Ejector Running But Flooding"

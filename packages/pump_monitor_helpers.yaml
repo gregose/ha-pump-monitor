@@ -97,6 +97,17 @@ input_number:
     unit_of_measurement: "%"
     mode: box
     initial: 50
+  sump_high_frequency_max:
+    name: "Sump high-frequency max starts (24h)"
+    icon: mdi:speedometer
+    min: 60
+    max: 3000
+    step: 10
+    unit_of_measurement: "starts"
+    mode: box
+    initial: 1500               # Phase-2 placeholder: quiet above normal (~215/day)
+                                # and storm peaks (~1500/day). Rain-normalized view
+                                # (ROADMAP) will replace this fixed daily count.
   sump_no_run_multiplier:
     name: "Sump no-run multiplier"
     icon: mdi:multiplication
@@ -216,6 +227,16 @@ input_number:
     unit_of_measurement: "%"
     mode: box
     initial: 50
+  ejector_high_frequency_max:
+    name: "Ejector high-frequency max starts (24h)"
+    icon: mdi:speedometer
+    min: 10
+    max: 1000
+    step: 5
+    unit_of_measurement: "starts"
+    mode: box
+    initial: 60                 # ejector is household-driven & rarely cycles; 60/day
+                                # stays quiet. Rain-normalized view (ROADMAP) later.
   ejector_no_run_multiplier:
     name: "Ejector no-run multiplier"
     icon: mdi:multiplication

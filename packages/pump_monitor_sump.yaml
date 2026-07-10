@@ -358,8 +358,11 @@ template:
         device_class: problem
         # built but alert OFF (superseded by short_interval; revisit Phase 2).
         # ROADMAP: replace fixed ceiling with a rain-normalized daily view.
+        # Threshold is the live sump_high_frequency_max helper (default 1500) — a
+        # fixed 60 was always tripped by the sump's normal ~215/day cadence.
         state: >
-          {{ states('sensor.sump_runs_24h') | float(0) > 60 }}
+          {{ states('sensor.sump_runs_24h') | float(0)
+             > states('input_number.sump_high_frequency_max') | float(1500) }}
 
       # --- §6b water-safety layer ---------------------------------------------
       - name: "Sump Running But Flooding"

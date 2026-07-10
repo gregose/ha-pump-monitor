@@ -86,7 +86,7 @@ All read helpers so thresholds tune live; all availability-safe; stddev floored.
 | `{pump}_high_duty_cycle` | duty_cycle_24h > high_duty_cycle_pct | losing the battle |
 | `{pump}_sensor_unavailable` | CT or running sensor unavailable >60 s | silent monitoring failure |
 | `{pump}_no_run_watchdog` | since_last_run > adaptive/​warm-up threshold | dead pump / stuck float / breaker |
-| `{pump}_high_frequency` | runs_24h > 60 | **built but alert OFF** (Phase 2) |
+| `{pump}_high_frequency` | runs_24h > `{pump}_high_frequency_max` (sump 1500 / ejector 60) | **built but alert OFF** (Phase 2). Fixed 60 always tripped the sump's ~215/day cadence — now a live helper |
 
 Water-safety (§6b):
 
