@@ -285,7 +285,7 @@ views:
                   - entity: binary_sensor.sump_running_but_flooding
                     name: Running but flooding
                   - entity: binary_sensor.sump_protection_compromised
-                    name: Protection compromised
+                    name: "Protection compromised — primary failed, backup load-bearing"
                   - entity: binary_sensor.sump_flood_sensor_fault
                     name: Flood sensor fault
                   - entity: sensor.0x282c02bfffefb418_battery
@@ -575,7 +575,7 @@ views:
                   - entity: binary_sensor.ejector_running_but_flooding
                     name: Running but flooding
                   - entity: binary_sensor.ejector_protection_compromised
-                    name: Protection compromised
+                    name: "Protection compromised — primary failed, backup load-bearing"
                   - entity: binary_sensor.ejector_flood_sensor_fault
                     name: Flood sensor fault
                   - entity: sensor.water_b3eb_battery
