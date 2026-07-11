@@ -93,7 +93,7 @@ All read helpers so thresholds tune live; all availability-safe; stddev floored.
 | `{pump}_short_cycling` | runs_10m > max_starts | stuck float / undersized |
 | `{pump}_continuous_run` | on AND elapsed > max_run_seconds | stuck float / inflow ≥ outflow |
 | `{pump}_current_load_high` | current_short_7d > baseline_30d·(1+drift%) | wear / partial clog |
-| `{pump}_current_load_low` | current_short_7d < baseline_30d·low% | sheared impeller / airlock / cavitation / stuck valve |
+| `{pump}_current_load_low` | current_short_7d < baseline_30d·low% | sheared impeller / airlock / cavitation / stuck valve — **CRITICAL** (running but not pumping = silent flood risk) |
 | `{pump}_current_spike` | run_peak_current > spike_a (0 = disabled) | jam / locked rotor |
 | `{pump}_high_duty_cycle` | duty_cycle_24h > high_duty_cycle_pct | losing the battle |
 | `{pump}_sensor_unavailable` | CT or running sensor unavailable >60 s | silent monitoring failure |
@@ -106,7 +106,12 @@ Water-safety (§6b):
 |---|---|---|
 | `{pump}_running_but_flooding` | running AND flood sensor wet | CRITICAL — losing / blocked discharge |
 | `{pump}_flood_sensor_fault` | flood sensor unavailable >60 s OR battery < low_batt% | WARNING — last line of defense blind |
-| `{pump}_protection_compromised` | no_run OR continuous_run OR current_load_low OR flood wet | CRITICAL — backup likely load-bearing |
+
+> The old `{pump}_protection_compromised` composite was removed: it OR'd
+> conditions that already page critically on their own, so it only ever fired a
+> **duplicate** critical. Its one unique effect — escalating `current_load_low`
+> — is now built into that alert directly (it's CRITICAL). Every alert is now
+> 1:1 with an explicit condition.
 
 Composite:
 
@@ -127,7 +132,6 @@ interruption sound. Ordered by priority (plan §9):
 |---|---|---|---|
 | Flooding | `flooding_alert` (raw flood input) | CRITICAL | until ack |
 | Running but flooding | `running_but_flooding_alert` | CRITICAL | until ack |
-| Protection compromised | `protection_compromised_alert` | CRITICAL | until ack |
 | Continuous run | `continuous_run_alert` | CRITICAL | until ack |
 | Sensor offline | `sensor_unavailable_alert` | CRITICAL | repeat |
 | No run | `no_run_alert` | CRITICAL (sump ON / ejector OFF) | until ack |
@@ -136,7 +140,7 @@ interruption sound. Ordered by priority (plan §9):
 | Short cycling | `short_cycling_alert` | WARNING | moderate |
 | Duration anomaly | `duration_anomaly_alert` | WARNING | reminder |
 | Current load high | `current_load_high_alert` | WARNING | ~daily |
-| Current load low | `current_load_low_alert` | WARNING | moderate |
+| Current load low | `current_load_low_alert` | **CRITICAL** | until ack |
 | Current spike | `current_spike_alert` | WARNING | moderate |
 | High duty cycle | `high_duty_cycle_alert` | WARNING | moderate |
 | High frequency | — (no alert; sensor only) | INFO | OFF — Phase 2 |

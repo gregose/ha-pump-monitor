@@ -37,18 +37,19 @@ driven; long quiet stretches are normal).
 
 **Water-safety layer outranks everything.** Every current-derived signal watches
 the *pump's electrical behavior*. The flood sensors watch the *water directly*
-and are the safety backbone: direct flood alert, `running_but_flooding`, and the
-`protection_compromised` composite (a primary fault and/or wet flood sensor →
-the battery backup is now load-bearing — the most important escalation state,
-constructible today with no backup metering).
+and are the safety backbone: direct flood alert and `running_but_flooding`. Each
+failure condition alerts explicitly at its own severity — no aggregate composite.
+(The former `protection_compromised` only duplicated criticals that already
+fired; its one genuinely-escalating case, `current_load_low` = running-but-not-
+pumping, is now CRITICAL on its own.)
 
 **Alert gating.** Layer-3 binary sensors are **pure physical conditions** —
-truthful for dashboard badges, the composite, and the status tile regardless of
-toggle state. Because the `alert` integration can't take a condition, each alert
-instead watches a thin gated wrapper `binary_sensor.*_alert` = (condition) AND
-`monitoring_enabled` AND its per-alert toggle. The `protection_compromised`
-composite and `status` tile read the **pure** sensors, so disabling an alert
-never masks a real escalation on the dashboard.
+truthful for dashboard badges and the status tile regardless of toggle state.
+Because the `alert` integration can't take a condition, each alert instead
+watches a thin gated wrapper `binary_sensor.*_alert` = (condition) AND
+`monitoring_enabled` AND its per-alert toggle. The `status` tile reads the
+**pure** sensors, so disabling an alert never masks a real escalation on the
+dashboard.
 
 **Availability-safe & idempotent.** Every template guards `unknown`/`unavailable`
 source states and defaults every `float()`; the z-score stddev is floored so a

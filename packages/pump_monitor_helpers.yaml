@@ -369,10 +369,6 @@ input_boolean:
     name: "Sump alert: running but flooding"
     icon: mdi:bell-ring
     initial: true
-  sump_alert_protection_compromised_enabled:
-    name: "Sump alert: protection compromised"
-    icon: mdi:bell-ring
-    initial: true
   sump_alert_flood_sensor_fault_enabled:
     name: "Sump alert: flood sensor fault"
     icon: mdi:bell-ring
@@ -425,10 +421,6 @@ input_boolean:
     initial: true
   ejector_alert_running_but_flooding_enabled:
     name: "Ejector alert: running but flooding"
-    icon: mdi:bell-ring
-    initial: true
-  ejector_alert_protection_compromised_enabled:
-    name: "Ejector alert: protection compromised"
     icon: mdi:bell-ring
     initial: true
   ejector_alert_flood_sensor_fault_enabled:

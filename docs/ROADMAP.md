@@ -23,8 +23,9 @@ its controller output, exposing `binary_sensor.sump_backup_running`.
 
 - A backup-ran event is itself **CRITICAL** — the primary failed silently and you
   are one backup failure from a flood.
-- Until then, `binary_sensor.sump_protection_compromised` (§6b) infers this from
-  primary fault + flood state, with no backup metering.
+- Until then there's no direct backup signal; the individual primary-fault
+  alerts (no_run, continuous_run, current_load_low = running-but-not-pumping,
+  flood) each page critically on their own as the proxy.
 
 ## Priority #3 — Weather station (context, not gating)
 

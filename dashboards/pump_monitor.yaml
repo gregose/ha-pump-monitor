@@ -97,7 +97,6 @@ views:
               exclude:
                 - entity_id: binary_sensor.sump_*_alert
                 - entity_id: binary_sensor.sump_running_but_flooding
-                - entity_id: binary_sensor.sump_protection_compromised
                 - entity_id: binary_sensor.sump_flood_sensor_fault
                 - entity_id: binary_sensor.sump_high_frequency
 
@@ -396,7 +395,6 @@ views:
               exclude:
                 - entity_id: binary_sensor.ejector_*_alert
                 - entity_id: binary_sensor.ejector_running_but_flooding
-                - entity_id: binary_sensor.ejector_protection_compromised
                 - entity_id: binary_sensor.ejector_flood_sensor_fault
                 - entity_id: binary_sensor.ejector_high_frequency
                 # off-by-design for the ejector (§6a: irregular household cadence),
@@ -656,7 +654,6 @@ views:
             entities:
               - input_boolean.sump_alert_flood_enabled
               - input_boolean.sump_alert_running_but_flooding_enabled
-              - input_boolean.sump_alert_protection_compromised_enabled
               - input_boolean.sump_alert_continuous_run_enabled
               - input_boolean.sump_alert_no_run_enabled
               - input_boolean.sump_alert_sensor_unavailable_enabled
@@ -695,7 +692,6 @@ views:
             entities:
               - input_boolean.ejector_alert_flood_enabled
               - input_boolean.ejector_alert_running_but_flooding_enabled
-              - input_boolean.ejector_alert_protection_compromised_enabled
               - input_boolean.ejector_alert_continuous_run_enabled
               - input_boolean.ejector_alert_no_run_enabled
               - input_boolean.ejector_alert_sensor_unavailable_enabled

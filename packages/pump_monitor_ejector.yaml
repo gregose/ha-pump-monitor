@@ -391,8 +391,8 @@ template:
           {% endif %}
           {# §6a: ejector no-run is OFF by default — long quiet stretches are
              normal (household-driven). Gated on its enable toggle so it stays
-             dark and never pollutes protection_compromised unless the user opts
-             in (sump keeps this watchdog ungated/always-on). #}
+             dark unless the user opts in (sump keeps this watchdog
+             ungated/always-on). #}
           {{ since > 0 and since > thresh
              and is_state('input_boolean.ejector_alert_no_run_enabled','on') }}
 
@@ -424,18 +424,6 @@ template:
           {% set lowpct = states('input_number.flood_sensor_low_battery_pct') | float(20) %}
           {{ leak in ['unknown','unavailable'] or batt < lowpct }}
 
-      - name: "Ejector Protection Compromised"
-        unique_id: pm_ejector_protection_compromised
-        device_class: safety
-        # composite: a primary fault is active and/or the flood sensor is wet →
-        # the primary has likely failed and the battery backup is load-bearing.
-        # Reads the PURE Layer-3 sensors so toggles never mask a real escalation.
-        state: >
-          {{ is_state('binary_sensor.ejector_no_run_watchdog','on')
-             or is_state('binary_sensor.ejector_continuous_run','on')
-             or is_state('binary_sensor.ejector_current_load_low','on')
-             or is_state('binary_sensor.water_b3eb_water_leak','on') }}
-
   # --- composite status tile (truthful; ignores toggles) ----------------------
   - sensor:
       - name: "Ejector Status"
@@ -446,7 +434,7 @@ template:
              else 'mdi:alert' if s == 'warning' else 'mdi:check-circle' }}
         state: >
           {% set flood   = is_state('binary_sensor.water_b3eb_water_leak','on') %}
-          {% set comp    = is_state('binary_sensor.ejector_protection_compromised','on') %}
+          {% set loadlow = is_state('binary_sensor.ejector_current_load_low','on') %}
           {% set cont    = is_state('binary_sensor.ejector_continuous_run','on') %}
           {% set norun   = is_state('binary_sensor.ejector_no_run_watchdog','on') %}
           {% set unavail = is_state('binary_sensor.ejector_sensor_unavailable','on') %}
@@ -456,11 +444,10 @@ template:
                is_state('binary_sensor.ejector_short_interval','on'),
                is_state('binary_sensor.ejector_short_cycling','on'),
                is_state('binary_sensor.ejector_current_load_high','on'),
-               is_state('binary_sensor.ejector_current_load_low','on'),
                is_state('binary_sensor.ejector_current_spike','on'),
                is_state('binary_sensor.ejector_high_duty_cycle','on'),
                is_state('binary_sensor.ejector_flood_sensor_fault','on') ] %}
-          {% if flood or rbf or comp or cont or norun or unavail %}
+          {% if flood or rbf or loadlow or cont or norun or unavail %}
             critical
           {% elif warns | select('==', true) | list | count > 0 %}
             warning
@@ -472,7 +459,6 @@ template:
             {% set r = namespace(items=[]) %}
             {% if is_state('binary_sensor.water_b3eb_water_leak','on') %}{% set r.items = r.items + ['FLOODING'] %}{% endif %}
             {% if is_state('binary_sensor.ejector_running_but_flooding','on') %}{% set r.items = r.items + ['running but flooding'] %}{% endif %}
-            {% if is_state('binary_sensor.ejector_protection_compromised','on') %}{% set r.items = r.items + ['protection compromised'] %}{% endif %}
             {% if is_state('binary_sensor.ejector_continuous_run','on') %}{% set r.items = r.items + ['continuous run'] %}{% endif %}
             {% if is_state('binary_sensor.ejector_no_run_watchdog','on') %}{% set r.items = r.items + ['no run'] %}{% endif %}
             {% if is_state('binary_sensor.ejector_sensor_unavailable','on') %}{% set r.items = r.items + ['sensor offline'] %}{% endif %}
@@ -500,12 +486,6 @@ template:
           {{ is_state('binary_sensor.ejector_running_but_flooding','on')
              and is_state('input_boolean.ejector_monitoring_enabled','on')
              and is_state('input_boolean.ejector_alert_running_but_flooding_enabled','on') }}
-      - name: "Ejector Protection Compromised Alert"
-        unique_id: pm_ejector_protection_compromised_alert
-        state: >
-          {{ is_state('binary_sensor.ejector_protection_compromised','on')
-             and is_state('input_boolean.ejector_monitoring_enabled','on')
-             and is_state('input_boolean.ejector_alert_protection_compromised_enabled','on') }}
       - name: "Ejector Continuous Run Alert"
         unique_id: pm_ejector_continuous_run_alert
         state: >
@@ -781,25 +761,6 @@ alert:
           critical: 1
           volume: 1.0
 
-  ejector_protection_compromised:
-    name: "🚨 Ejector protection compromised"
-    entity_id: binary_sensor.ejector_protection_compromised_alert
-    state: "on"
-    repeat: [1, 10]
-    can_acknowledge: true
-    skip_first: false
-    title: "🚨 Ejector protection compromised"
-    message: "A primary ejector fault is active and/or the flood sensor is wet — the battery backup may now be load-bearing. Investigate immediately."
-    done_message: "Ejector protection-compromised cleared."
-    notifiers:
-      - gregs_iphone
-    data:
-      push:
-        sound:
-          name: default
-          critical: 1
-          volume: 1.0
-
   # ===== CRITICAL — current-derived =====
   ejector_continuous_run:
     name: "Ejector continuous run"
@@ -919,18 +880,26 @@ alert:
       - gregs_iphone
 
   ejector_current_load_low:
-    name: "Ejector current low"
+    name: "🚨 Ejector running but not pumping"
     entity_id: binary_sensor.ejector_current_load_low_alert
     state: "on"
-    repeat: [60]
+    repeat: [1, 10]
     can_acknowledge: true
     skip_first: false
-    title: "Ejector load low"
+    title: "🚨 Ejector running but not pumping"
     message: >
       Ejector running current 7-day avg {{ states('sensor.ejector_current_short_7d') }} A is well below baseline
-      {{ states('sensor.ejector_current_baseline_30d') }} A (sheared impeller / airlock / cavitation / stuck check valve).
+      {{ states('sensor.ejector_current_baseline_30d') }} A — the pump runs but moves little/no water
+      (sheared impeller / airlock / cavitation / stuck check valve). Backup may be load-bearing.
+    done_message: "Ejector load-low cleared."
     notifiers:
       - gregs_iphone
+    data:
+      push:
+        sound:
+          name: default
+          critical: 1
+          volume: 1.0
 
   ejector_current_spike:
     name: "Ejector current spike"
