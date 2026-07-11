@@ -168,7 +168,7 @@ views:
                   # bucket per-run values to hourly so 7d renders ~168 bars, not
                   # ~1700 (which crashes Chrome). Shorten graph_span for per-run detail.
                   - entity: sensor.sump_run_avg_current
-                    name: Run avg
+                    name: Last run avg
                     type: column
                     color: '#42a5f5'          # blue columns
                     group_by:
@@ -196,7 +196,7 @@ views:
                         text: seconds
                 series:
                   - entity: sensor.sump_last_run_duration
-                    name: Run duration
+                    name: Last run duration
                     type: column
                     color: '#42a5f5'          # blue columns
                     group_by:
@@ -458,7 +458,7 @@ views:
                   # bucket per-run values to hourly so 7d renders ~168 bars, not
                   # ~1700 (which crashes Chrome). Shorten graph_span for per-run detail.
                   - entity: sensor.ejector_run_avg_current
-                    name: Run avg
+                    name: Last run avg
                     type: column
                     color: '#42a5f5'          # blue columns
                     group_by:
@@ -486,7 +486,7 @@ views:
                         text: seconds
                 series:
                   - entity: sensor.ejector_last_run_duration
-                    name: Run duration
+                    name: Last run duration
                     type: column
                     color: '#42a5f5'          # blue columns
                     group_by:
