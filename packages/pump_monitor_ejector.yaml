@@ -335,14 +335,16 @@ template:
           {% set drift = states('input_number.ejector_current_drift_pct') | float(20) %}
           {{ b30 > 0 and s7 > b30 * (1 + drift / 100) }}
 
+      # ACUTE (critical): last-5-runs median well below baseline = running but
+      # not moving water. Uses the 5-run window, NOT the 7d mean (see sump note).
       - name: "Ejector Current Load Low"
         unique_id: pm_ejector_current_load_low
         device_class: problem
         state: >
-          {% set s7  = states('sensor.ejector_current_short_7d') | float(0) %}
+          {% set s5  = states('sensor.ejector_current_short_5run') | float(0) %}
           {% set b30 = states('sensor.ejector_current_baseline_30d') | float(0) %}
           {% set low = states('input_number.ejector_current_low_pct') | float(60) %}
-          {{ b30 > 0 and s7 > 0 and s7 < b30 * low / 100 }}
+          {{ b30 > 0 and s5 > 0 and s5 < b30 * low / 100 }}
 
       - name: "Ejector Current Spike"
         unique_id: pm_ejector_current_spike
@@ -661,6 +663,13 @@ sensor:
     state_characteristic: mean
     sampling_size: 2500
     max_age: { days: 7 }
+  # last-5-runs median → the ACUTE "running but not pumping" signal (see sump).
+  - platform: statistics
+    name: "Ejector Current Short 5run"
+    unique_id: pm_ejector_current_short_5run
+    entity_id: sensor.ejector_run_avg_current
+    state_characteristic: median
+    sampling_size: 5
   - platform: statistics
     name: "Ejector Current Stddev 30d"
     unique_id: pm_ejector_current_stddev_30d
@@ -888,9 +897,9 @@ alert:
     skip_first: false
     title: "🚨 Ejector running but not pumping"
     message: >
-      Ejector running current 7-day avg {{ states('sensor.ejector_current_short_7d') }} A is well below baseline
-      {{ states('sensor.ejector_current_baseline_30d') }} A — the pump runs but moves little/no water
-      (sheared impeller / airlock / cavitation / stuck check valve). Backup may be load-bearing.
+      Recent ejector runs are drawing {{ states('sensor.ejector_current_short_5run') }} A (median of last 5),
+      well below the {{ states('sensor.ejector_current_baseline_30d') }} A baseline — the pump runs but
+      moves little/no water (sheared impeller / airlock / cavitation / stuck check valve). Backup may be load-bearing.
     done_message: "Ejector load-low cleared."
     notifiers:
       - gregs_iphone

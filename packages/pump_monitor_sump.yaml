@@ -333,14 +333,17 @@ template:
           {% set drift = states('input_number.sump_current_drift_pct') | float(20) %}
           {{ b30 > 0 and s7 > b30 * (1 + drift / 100) }}
 
+      # ACUTE (critical): last-5-runs median well below baseline = running but
+      # not moving water. Uses the 5-run window, NOT the 7d mean, so it reacts in
+      # a few runs. (current_load_high stays on the 7d mean — wear is gradual.)
       - name: "Sump Current Load Low"
         unique_id: pm_sump_current_load_low
         device_class: problem
         state: >
-          {% set s7  = states('sensor.sump_current_short_7d') | float(0) %}
+          {% set s5  = states('sensor.sump_current_short_5run') | float(0) %}
           {% set b30 = states('sensor.sump_current_baseline_30d') | float(0) %}
           {% set low = states('input_number.sump_current_low_pct') | float(60) %}
-          {{ b30 > 0 and s7 > 0 and s7 < b30 * low / 100 }}
+          {{ b30 > 0 and s5 > 0 and s5 < b30 * low / 100 }}
 
       - name: "Sump Current Spike"
         unique_id: pm_sump_current_spike
@@ -655,6 +658,15 @@ sensor:
     state_characteristic: mean
     sampling_size: 2500
     max_age: { days: 7 }
+  # last-5-runs median → the ACUTE "running but not pumping" signal. No max_age:
+  # it's purely the last 5 runs, so it reacts within a few runs (minutes during a
+  # storm) instead of the days a 7d mean would take. Median rejects a single fluke.
+  - platform: statistics
+    name: "Sump Current Short 5run"
+    unique_id: pm_sump_current_short_5run
+    entity_id: sensor.sump_run_avg_current
+    state_characteristic: median
+    sampling_size: 5
   - platform: statistics
     name: "Sump Current Stddev 30d"
     unique_id: pm_sump_current_stddev_30d
@@ -885,9 +897,9 @@ alert:
     skip_first: false
     title: "🚨 Sump running but not pumping"
     message: >
-      Sump running current 7-day avg {{ states('sensor.sump_current_short_7d') }} A is well below baseline
-      {{ states('sensor.sump_current_baseline_30d') }} A — the pump runs but moves little/no water
-      (sheared impeller / airlock / cavitation / stuck check valve). Backup may be load-bearing.
+      Recent sump runs are drawing {{ states('sensor.sump_current_short_5run') }} A (median of last 5),
+      well below the {{ states('sensor.sump_current_baseline_30d') }} A baseline — the pump runs but
+      moves little/no water (sheared impeller / airlock / cavitation / stuck check valve). Backup may be load-bearing.
     done_message: "Sump load-low cleared."
     notifiers:
       - gregs_iphone

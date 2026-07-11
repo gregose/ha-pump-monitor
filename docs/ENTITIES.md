@@ -69,7 +69,8 @@ stable `pm_{pump}_…` `unique_id` so it is registry-tracked and renameable.
 | `{pump}_interval_p05_14d` | percentile 5 | interval_between_starts | 14 d | Data-driven "too short" floor |
 | `{pump}_idle_gap_median_14d` | median | idle_gap | 14 d | Typical inflow gap |
 | `{pump}_current_baseline_30d` | mean | run_avg_current | 30 d | Long current baseline (steady-state) |
-| `{pump}_current_short_7d` | mean | run_avg_current | 7 d | Recent current window (drift) |
+| `{pump}_current_short_7d` | mean | run_avg_current | 7 d | Recent current window (gradual drift → current_load_high) |
+| `{pump}_current_short_5run` | median | run_avg_current | last 5 runs | **Acute** low-current signal for the critical `current_load_low` (self-scales: faster when runs are frequent) |
 | `{pump}_current_stddev_30d` | standard_deviation | run_avg_current | 30 d | Current spread |
 | `{pump}_startup_current_median_30` | median | startup_current | 30 runs | Smoothed inrush trend — **observational** (weak-start-cap / bearing watch) |
 | `{pump}_duty_cycle_7d` | mean | duty_cycle_24h | 7 d | 7-day duty cycle |
@@ -93,7 +94,7 @@ All read helpers so thresholds tune live; all availability-safe; stddev floored.
 | `{pump}_short_cycling` | runs_10m > max_starts | stuck float / undersized |
 | `{pump}_continuous_run` | on AND elapsed > max_run_seconds | stuck float / inflow ≥ outflow |
 | `{pump}_current_load_high` | current_short_7d > baseline_30d·(1+drift%) | wear / partial clog |
-| `{pump}_current_load_low` | current_short_7d < baseline_30d·low% | sheared impeller / airlock / cavitation / stuck valve — **CRITICAL** (running but not pumping = silent flood risk) |
+| `{pump}_current_load_low` | **last-5-runs median** < baseline_30d·low% | sheared impeller / airlock / cavitation / stuck valve — **CRITICAL**, acute (running but not pumping = silent flood risk; fires within a few runs, not the 7d mean) |
 | `{pump}_current_spike` | run_peak_current > spike_a (0 = disabled) | jam / locked rotor |
 | `{pump}_high_duty_cycle` | duty_cycle_24h > high_duty_cycle_pct | losing the battle |
 | `{pump}_sensor_unavailable` | CT or running sensor unavailable >60 s | silent monitoring failure |
