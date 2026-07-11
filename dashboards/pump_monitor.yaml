@@ -6,7 +6,7 @@
 #     it spans the FULL dashboard width. NOTE: do NOT add Sections layout_options
 #     to apexcharts-card — it strict-validates its config and errors on unknown
 #     keys; and Sections columns cap at ~500px (a narrow centered column).
-#   - Overview / Config use Sections (tiled entity cards; no wide graphs needed).
+#   - Config uses Sections (tiled entity cards; no wide graphs needed).
 #
 # CUSTOM CARDS (HACS):
 #   - apexcharts-card   REQUIRED for the graph tabs.
@@ -15,117 +15,12 @@
 #   Install both via HACS → Frontend, then hard-refresh.
 #
 # Views:
-#   Overview  — both pumps at a glance
-#   Sump      — glance summary → graphs → safety/health/lifetime  ← template
-#   Ejector   — full detail (mirrors Sump; pending redesign pass)
+#   Sump      — glance summary → graphs → safety/health/lifetime
+#   Ejector   — same layout as Sump (CT1 / ejector entities)
 #   Config    — ALL controls + alert toggles, both pumps
-#   Remote    — compact wall/ESP panel
 # =============================================================================
 title: Pump Monitor
 views:
-  # ===========================================================================
-  # OVERVIEW — both pumps at a glance
-  # ===========================================================================
-  - title: Overview
-    path: overview
-    icon: mdi:water-pump
-    type: sections
-    max_columns: 2
-    sections:
-      - type: grid
-        cards:
-          - type: heading
-            heading: Sump
-            heading_style: title
-          - type: markdown
-            content: >
-              ## {{ states('sensor.sump_status') | upper }}
-
-              {{ state_attr('sensor.sump_status', 'reason') or 'All clear' }}
-          - type: horizontal-stack
-            cards:
-              - type: gauge
-                name: Live current
-                entity: sensor.energy_meter_eth_ws_f3a598_ct2_amps
-                unit: A
-                needle: true
-                # 0 = idle; ~8-9 A = normal run (green). ~11 A ≈ baseline +20%
-                # (current_load_high trip) enters yellow; ≥14 A is above normal
-                # peaks (~13) → red for jam / locked rotor. max 18 gives headroom.
-                max: 18
-                severity:
-                  green: 0
-                  yellow: 11
-                  red: 14
-              - type: glance
-                entities:
-                  - entity: binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running
-                    name: Running
-                  - entity: sensor.sump_time_since_last_run
-                    name: Since run
-                  - entity: sensor.sump_runs_24h
-                    name: Runs 24h
-                  - entity: sensor.sump_duty_cycle_24h
-                    name: Duty 24h
-          - type: entities
-            title: Safety
-            entities:
-              - entity: binary_sensor.0x282c02bfffefb418_water_leak
-                name: Flood sensor (above rim)
-              - entity: binary_sensor.sump_protection_compromised
-                name: Protection compromised
-              - entity: binary_sensor.sump_flood_sensor_fault
-                name: Flood sensor fault
-              - entity: sensor.0x282c02bfffefb418_battery
-                name: Flood sensor battery
-
-      - type: grid
-        cards:
-          - type: heading
-            heading: Ejector
-            heading_style: title
-          - type: markdown
-            content: >
-              ## {{ states('sensor.ejector_status') | upper }}
-
-              {{ state_attr('sensor.ejector_status', 'reason') or 'All clear' }}
-          - type: horizontal-stack
-            cards:
-              - type: gauge
-                name: Live current
-                entity: sensor.energy_meter_eth_ws_f3a598_ct1_amps
-                unit: A
-                needle: true
-                # 0 = idle; ~8-9 A = normal run (green). ~11 A ≈ baseline +20%
-                # (current_load_high trip) enters yellow; ≥14 A is above normal
-                # peaks (~13) → red for jam / locked rotor. max 18 gives headroom.
-                max: 18
-                severity:
-                  green: 0
-                  yellow: 11
-                  red: 14
-              - type: glance
-                entities:
-                  - entity: binary_sensor.circuitsetup_energy_meter_f3a598_ejector_pump_running
-                    name: Running
-                  - entity: sensor.ejector_time_since_last_run
-                    name: Since run
-                  - entity: sensor.ejector_runs_24h
-                    name: Runs 24h
-                  - entity: sensor.ejector_duty_cycle_24h
-                    name: Duty 24h
-          - type: entities
-            title: Safety
-            entities:
-              - entity: binary_sensor.water_b3eb_water_leak
-                name: Flood sensor (above rim)
-              - entity: binary_sensor.ejector_protection_compromised
-                name: Protection compromised
-              - entity: binary_sensor.ejector_flood_sensor_fault
-                name: Flood sensor fault
-              - entity: sensor.water_b3eb_battery
-                name: Flood sensor battery
-
   # ===========================================================================
   # SUMP — glance summary (top) → graphs (middle) → safety/health/lifetime.
   # Full-width single column so the useful info gets real horizontal space.
@@ -184,8 +79,6 @@ views:
                     name: Since run
                   - entity: sensor.sump_interval_between_starts
                     name: Last interval
-                  - entity: sensor.sump_interval_median_14d
-                    name: Typical
                   - entity: binary_sensor.0x282c02bfffefb418_water_leak
                     name: Flood
 
@@ -414,123 +307,294 @@ views:
                     name: Duty (30d)
 
   # ===========================================================================
-  # EJECTOR — existing detail (controls moved to Config). Pending redesign
-  # pass to mirror the Sump template once approved.
+  # EJECTOR — glance summary (top) → graphs (middle) → safety/health/lifetime.
+  # Full-width single column so the useful info gets real horizontal space.
   # ===========================================================================
   - title: Ejector
     path: ejector
     icon: mdi:pump
+    # panel mode → the single root card fills the FULL dashboard width. No
+    # Sections/layout_options here: apexcharts-card strict-validates its config
+    # and errors on unknown keys like layout_options, and Sections columns cap
+    # at ~500px. vertical/horizontal stacks give full-width rows instead.
+    panel: true
     cards:
-      - type: markdown
-        content: >
-          ## Ejector — {{ states('sensor.ejector_status') | upper }}
-
-          {{ state_attr('sensor.ejector_status', 'reason') }}
-
-      - type: entities
-        title: Safety
-        entities:
-          - entity: binary_sensor.water_b3eb_water_leak
-            name: Flood sensor (above rim)
-          - entity: binary_sensor.ejector_running_but_flooding
-            name: Running but flooding
-          - entity: binary_sensor.ejector_protection_compromised
-            name: Protection compromised
-          - entity: binary_sensor.ejector_flood_sensor_fault
-            name: Flood sensor fault
-          - entity: sensor.water_b3eb_battery
-            name: Flood sensor battery
-
-      - type: horizontal-stack
+      - type: vertical-stack
+        # Margin around the full-bleed panel. Requires the card-mod HACS card;
+        # if card-mod isn't installed this key is simply ignored (no error).
+        card_mod:
+          style: |
+            :host {
+              display: block;
+              margin: 12px 16px 24px 16px;
+            }
         cards:
-          - type: gauge
-            name: Live current
-            entity: sensor.energy_meter_eth_ws_f3a598_ct1_amps
-            unit: A
-            needle: true
-            # 0 = idle; ~8-9 A = normal run (green). ~11 A ≈ baseline +20%
-            # (current_load_high trip) enters yellow; ≥14 A is above normal
-            # peaks (~13) → red for jam / locked rotor. max 18 gives headroom.
-            max: 18
-            severity:
-              green: 0
-              yellow: 11
-              red: 14
-          - type: glance
-            entities:
-              - entity: binary_sensor.circuitsetup_energy_meter_f3a598_ejector_pump_running
-                name: Running
-              - entity: sensor.ejector_time_since_last_run
-                name: Since last run
-              - entity: sensor.ejector_runs_24h
-                name: Runs 24h
-              - entity: sensor.ejector_duty_cycle_24h
-                name: Duty 24h
+          # ---- status line ----
+          - type: markdown
+            content: >
+              ## Ejector — {{ states('sensor.ejector_status') | upper }} —
+              {{ state_attr('sensor.ejector_status', 'reason') or 'All clear' }}
 
-      - type: history-graph
-        title: State & current
-        hours_to_show: 24
-        entities:
-          - binary_sensor.circuitsetup_energy_meter_f3a598_ejector_pump_running
-          - sensor.energy_meter_eth_ws_f3a598_ct1_amps
+          # ---- live gauge + roomy KPI glance ----
+          - type: horizontal-stack
+            cards:
+              - type: gauge
+                name: Live current
+                entity: sensor.energy_meter_eth_ws_f3a598_ct1_amps
+                unit: A
+                needle: true
+                # NOTE: bands copied from the sump — verify the ejector's own
+                # current profile. 0 = idle; ~8-9 A run (green); ~11 A ≈ +20%
+                # (current_load_high trip) yellow; ≥14 A above normal peaks
+                # (~13) → red for jam / locked rotor. max 18 gives headroom.
+                max: 18
+                severity:
+                  green: 0
+                  yellow: 11
+                  red: 14
+              - type: glance
+                columns: 4
+                state_color: true
+                entities:
+                  - entity: binary_sensor.circuitsetup_energy_meter_f3a598_ejector_pump_running
+                    name: Running
+                  # timestamp entity → the frontend renders a self-updating
+                  # relative "N ago" (and seconds when very recent), decoupled
+                  # from the ~60s time_since_last_run template.
+                  - entity: sensor.ejector_last_start_time
+                    name: Since run
+                  - entity: sensor.ejector_interval_between_starts
+                    name: Last interval
+                  - entity: binary_sensor.water_b3eb_water_leak
+                    name: Flood
 
-      - type: history-graph
-        title: Interval between starts
-        hours_to_show: 168
-        entities:
-          - sensor.ejector_interval_between_starts
-          - sensor.ejector_interval_median_14d
-          - sensor.ejector_interval_p05_14d
+          # ---- active problems (hidden entirely when all clear) ----
+          - type: custom:auto-entities
+            show_empty: false
+            card:
+              type: entities
+              title: ⚠ Active health flags
+            filter:
+              include:
+                - entity_id: binary_sensor.ejector_*
+                  state: "on"
+                  options:
+                    secondary_info: last-changed
+              exclude:
+                - entity_id: binary_sensor.ejector_*_alert
+                - entity_id: binary_sensor.ejector_running_but_flooding
+                - entity_id: binary_sensor.ejector_protection_compromised
+                - entity_id: binary_sensor.ejector_flood_sensor_fault
+                - entity_id: binary_sensor.ejector_high_frequency
+                # off-by-design for the ejector (§6a: irregular household cadence),
+                # so their pure sensors would chronically clutter this card
+                - entity_id: binary_sensor.ejector_no_run_watchdog
+                - entity_id: binary_sensor.ejector_short_interval
 
-      - type: history-graph
-        title: Idle gap & inflow index
-        hours_to_show: 168
-        entities:
-          - sensor.ejector_idle_gap
-          - sensor.ejector_inflow_index
+          # ---- HERO: interval between starts, full width ----
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Interval between starts
+              show_states: true
+              colorize_states: true
+            graph_span: 7d
+            span:
+              end: minute
+            yaxis:
+              - min: 0
+                decimals: 0
+                apex_config:
+                  title:
+                    text: seconds
+            series:
+              - entity: sensor.ejector_interval_between_starts
+                name: Interval
+                type: line
+                stroke_width: 2
+                curve: smooth
+                group_by:
+                  func: median
+                  duration: 15min
+              - entity: sensor.ejector_interval_median_14d
+                name: Median 14d
+                type: line
+                stroke_width: 1
+                curve: stepline
+                color: '#43a047'
+                group_by:
+                  func: last
+                  duration: 1h
+              - entity: sensor.ejector_interval_p05_14d
+                name: P05 floor
+                type: line
+                stroke_width: 1
+                curve: stepline
+                color: '#e53935'
+                group_by:
+                  func: last
+                  duration: 1h
 
-      - type: statistics-graph
-        title: Run duration
-        period: hour
-        chart_type: line
-        stat_types:
-          - mean
-          - min
-          - max
-        entities:
-          - sensor.ejector_last_run_duration
+          # ---- graphs, two-up ----
+          - type: horizontal-stack
+            cards:
+              # Run current — per-run AVERAGE current vs its 30d baseline (the
+              # baseline IS the 30d mean of run_avg_current). Mirrors the run-
+              # duration chart: a run above the line = high load (wear / clog),
+              # below = airlock / sheared impeller. Live instantaneous amps is on
+              # the gauge above.
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: Run current (hourly avg)
+                  show_states: true
+                graph_span: 7d
+                yaxis:
+                  - min: 0
+                    apex_config:
+                      title:
+                        text: A
+                series:
+                  # bucket per-run values to hourly so 7d renders ~168 bars, not
+                  # ~1700 (which crashes Chrome). Shorten graph_span for per-run detail.
+                  - entity: sensor.ejector_run_avg_current
+                    name: Run avg
+                    type: column
+                    color: '#42a5f5'          # blue columns
+                    group_by:
+                      func: avg
+                      duration: 1h
+                  - entity: sensor.ejector_current_baseline_30d
+                    name: Baseline 30d
+                    type: line
+                    stroke_width: 3
+                    color: '#ff9800'          # orange mean line
+                    curve: smooth
+                    group_by:
+                      func: last
+                      duration: 1h
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: Run duration (hourly max)
+                  show_states: true
+                graph_span: 7d
+                yaxis:
+                  - min: 0
+                    apex_config:
+                      title:
+                        text: seconds
+                series:
+                  - entity: sensor.ejector_last_run_duration
+                    name: Run duration
+                    type: column
+                    color: '#42a5f5'          # blue columns
+                    group_by:
+                      func: max
+                      duration: 1h
+                  - entity: sensor.ejector_duration_mean
+                    name: Mean 14d
+                    type: line
+                    stroke_width: 3
+                    color: '#ff9800'          # orange line — clearly distinct
+                    curve: smooth
+                    group_by:
+                      func: last
+                      duration: 1h
 
-      - type: history-graph
-        title: Current baseline (wear trend)
-        hours_to_show: 720
-        entities:
-          - sensor.ejector_current_short_7d
-          - sensor.ejector_current_baseline_30d
+          - type: horizontal-stack
+            cards:
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: Current wear trend (7d vs 30d)
+                  show_states: true
+                graph_span: 30d
+                yaxis:
+                  - min: 0
+                    apex_config:
+                      title:
+                        text: A
+                series:
+                  - entity: sensor.ejector_current_short_7d
+                    name: 7d avg
+                    type: line
+                    stroke_width: 2
+                    group_by:
+                      func: last
+                      duration: 1h
+                  - entity: sensor.ejector_current_baseline_30d
+                    name: 30d baseline
+                    type: line
+                    stroke_width: 2
+                    curve: smooth
+                    group_by:
+                      func: last
+                      duration: 1h
+              # Startup current (OBSERVATIONAL — not tied to any alert): the
+              # per-run inrush glimpse (teal columns) with a 30-run rolling
+              # median (purple) to ride over the sampling noise. Kept to watch
+              # for a slow rise (weak start capacitor / stiff bearings) later.
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: Startup current (observational)
+                  show_states: true
+                graph_span: 7d
+                yaxis:
+                  - min: 0
+                    apex_config:
+                      title:
+                        text: A
+                series:
+                  - entity: sensor.ejector_startup_current
+                    name: Hourly max
+                    type: column
+                    color: '#26a69a'
+                    group_by:
+                      func: max
+                      duration: 1h
+                  - entity: sensor.ejector_startup_current_median_30
+                    name: Median (30 runs)
+                    type: line
+                    stroke_width: 3
+                    color: '#ab47bc'
+                    curve: smooth
+                    group_by:
+                      func: last
+                      duration: 1h
 
-      - type: entities
-        title: Lifetime & wear
-        entities:
-          - entity: counter.ejector_lifetime_cycles
-            name: Lifetime cycles
-          - entity: sensor.ejector_lifetime_runtime
-            name: Lifetime runtime
-          - entity: sensor.ejector_duty_cycle_24h
-            name: Duty cycle 24h
-
-      - type: entities
-        title: Health badges
-        entities:
-          - binary_sensor.ejector_continuous_run
-          - binary_sensor.ejector_no_run_watchdog
-          - binary_sensor.ejector_short_interval
-          - binary_sensor.ejector_short_cycling
-          - binary_sensor.ejector_run_duration_anomaly
-          - binary_sensor.ejector_current_load_high
-          - binary_sensor.ejector_current_load_low
-          - binary_sensor.ejector_current_spike
-          - binary_sensor.ejector_high_duty_cycle
-          - binary_sensor.ejector_high_frequency
-          - binary_sensor.ejector_sensor_unavailable
+          # ---- safety + lifetime, two-up (bottom) ----
+          - type: horizontal-stack
+            cards:
+              - type: entities
+                title: Safety
+                entities:
+                  - entity: binary_sensor.water_b3eb_water_leak
+                    name: Flood sensor (above rim)
+                  - entity: binary_sensor.ejector_running_but_flooding
+                    name: Running but flooding
+                  - entity: binary_sensor.ejector_protection_compromised
+                    name: Protection compromised
+                  - entity: binary_sensor.ejector_flood_sensor_fault
+                    name: Flood sensor fault
+                  - entity: sensor.water_b3eb_battery
+                    name: Flood sensor battery
+              - type: entities
+                title: Lifetime & wear
+                entities:
+                  - entity: counter.ejector_lifetime_cycles
+                    name: Lifetime cycles
+                  - entity: sensor.ejector_lifetime_runtime
+                    name: Lifetime runtime
+                  - entity: sensor.ejector_runs_24h
+                    name: Runs (24h)
+                  - entity: sensor.ejector_duty_cycle_24h
+                    name: Duty (24h)
+                  - entity: sensor.ejector_duty_cycle_7d
+                    name: Duty (7d)
+                  - entity: sensor.ejector_duty_cycle_30d
+                    name: Duty (30d)
 
   # ===========================================================================
   # CONFIG — all thresholds + alert toggles, both pumps (moved off pump tabs)
@@ -618,80 +682,3 @@ views:
               - input_boolean.ejector_alert_duration_anomaly_enabled
               - input_boolean.ejector_alert_current_load_enabled
               - input_boolean.ejector_alert_duty_cycle_enabled
-
-  # ===========================================================================
-  # REMOTE PANEL — compact "is everything OK right now" (wall/ESP panel)
-  # ===========================================================================
-  - title: Remote
-    path: remote
-    icon: mdi:tablet-dashboard
-    cards:
-      - type: markdown
-        content: >
-          # {{ states('sensor.sump_status') | upper }} / {{ states('sensor.ejector_status') | upper }}
-
-          **Sump:** {{ state_attr('sensor.sump_status', 'reason') }}
-
-          **Ejector:** {{ state_attr('sensor.ejector_status', 'reason') }}
-
-      - type: glance
-        title: Sump
-        columns: 3
-        entities:
-          - entity: binary_sensor.circuitsetup_energy_meter_f3a598_sump_pump_running
-            name: Running
-          - entity: sensor.energy_meter_eth_ws_f3a598_ct2_amps
-            name: Current
-          - entity: sensor.sump_time_since_last_run
-            name: Since run
-          - entity: sensor.sump_interval_between_starts
-            name: Last interval
-          - entity: sensor.sump_interval_median_14d
-            name: Typical
-          - entity: binary_sensor.0x282c02bfffefb418_water_leak
-            name: Flood
-
-      - type: custom:apexcharts-card
-        header:
-          show: true
-          title: Sump current (2h)
-        graph_span: 2h
-        chart_type: area
-        series:
-          - entity: sensor.energy_meter_eth_ws_f3a598_ct2_amps
-            name: Current
-            stroke_width: 2
-            group_by:
-              func: max
-              duration: 1min
-
-      - type: glance
-        title: Ejector
-        columns: 3
-        entities:
-          - entity: binary_sensor.circuitsetup_energy_meter_f3a598_ejector_pump_running
-            name: Running
-          - entity: sensor.energy_meter_eth_ws_f3a598_ct1_amps
-            name: Current
-          - entity: sensor.ejector_time_since_last_run
-            name: Since run
-          - entity: sensor.ejector_interval_between_starts
-            name: Last interval
-          - entity: sensor.ejector_interval_median_14d
-            name: Typical
-          - entity: binary_sensor.water_b3eb_water_leak
-            name: Flood
-
-      - type: custom:apexcharts-card
-        header:
-          show: true
-          title: Ejector current (2h)
-        graph_span: 2h
-        chart_type: area
-        series:
-          - entity: sensor.energy_meter_eth_ws_f3a598_ct1_amps
-            name: Current
-            stroke_width: 2
-            group_by:
-              func: max
-              duration: 1min
