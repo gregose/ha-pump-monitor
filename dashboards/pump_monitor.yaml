@@ -277,19 +277,32 @@ views:
           # ---- safety + lifetime, two-up (bottom) ----
           - type: horizontal-stack
             cards:
+              # Explicit failure/safety states — each row is exactly one alert
+              # condition (no opaque "protection compromised" composite; flood
+              # shown once). The status line up top lists whatever is active.
               - type: entities
                 title: Safety
                 entities:
-                  - entity: binary_sensor.0x282c02bfffefb418_water_leak
-                    name: Flood sensor (above rim)
+                  - type: section
+                    label: Pump failure
+                  - entity: binary_sensor.sump_no_run_watchdog
+                    name: No run (dead / stuck float / breaker)
+                  - entity: binary_sensor.sump_continuous_run
+                    name: Continuous run (inflow ≥ output)
+                  - entity: binary_sensor.sump_current_load_low
+                    name: Low current — running but not pumping (airlock / sheared)
+                  - type: section
+                    label: Flooding
                   - entity: binary_sensor.sump_running_but_flooding
-                    name: Running but flooding
-                  - entity: binary_sensor.sump_protection_compromised
-                    name: "Protection compromised — primary failed, backup load-bearing"
+                    name: Running but flooding (discharge blocked)
+                  - entity: binary_sensor.0x282c02bfffefb418_water_leak
+                    name: Flood — water above rim
+                  - type: section
+                    label: Flood sensor
                   - entity: binary_sensor.sump_flood_sensor_fault
-                    name: Flood sensor fault
+                    name: Sensor fault (blind)
                   - entity: sensor.0x282c02bfffefb418_battery
-                    name: Flood sensor battery
+                    name: Battery
               - type: entities
                 title: Lifetime & wear
                 entities:
@@ -567,19 +580,29 @@ views:
           # ---- safety + lifetime, two-up (bottom) ----
           - type: horizontal-stack
             cards:
+              # Explicit failure/safety states (no composite; flood shown once).
+              # "No run" omitted — off by design for the ejector (§6a).
               - type: entities
                 title: Safety
                 entities:
-                  - entity: binary_sensor.water_b3eb_water_leak
-                    name: Flood sensor (above rim)
+                  - type: section
+                    label: Pump failure
+                  - entity: binary_sensor.ejector_continuous_run
+                    name: Continuous run (inflow ≥ output)
+                  - entity: binary_sensor.ejector_current_load_low
+                    name: Low current — running but not pumping (airlock / sheared)
+                  - type: section
+                    label: Flooding
                   - entity: binary_sensor.ejector_running_but_flooding
-                    name: Running but flooding
-                  - entity: binary_sensor.ejector_protection_compromised
-                    name: "Protection compromised — primary failed, backup load-bearing"
+                    name: Running but flooding (discharge blocked)
+                  - entity: binary_sensor.water_b3eb_water_leak
+                    name: Flood — water above rim
+                  - type: section
+                    label: Flood sensor
                   - entity: binary_sensor.ejector_flood_sensor_fault
-                    name: Flood sensor fault
+                    name: Sensor fault (blind)
                   - entity: sensor.water_b3eb_battery
-                    name: Flood sensor battery
+                    name: Battery
               - type: entities
                 title: Lifetime & wear
                 entities:
